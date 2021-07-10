@@ -1,0 +1,692 @@
+---
+title: "WEEK 13 Part2 IP R PROGRAMMING"
+Author: Joy Kiriba
+Date: 09/07/21
+output: html_document
+---
+#1. Defining the question
+
+##a) Specifying the Data Analytic Question.
+``` Classifying customers by studying and understanding their behavior from data collected over the past year while also learning the characteristics of customer groups.```
+
+##b) Defining the metric of success
+``` The project will be a success when we are able to identify the customers who are most likely to complete an e-commerce transaction by studying their online behavior.```
+
+##c) Understanding the context
+``` Kira Plastinina is a Russian brand that is sold through a defunct chain of retail stores in Russia, Ukraine, Kazakhstan, Belarus, China, Philippines, and Armenia. The brand’s Sales and Marketing team would like to understand their customer’s behavior from data that they have collected over the past year. More specifically, they would like to learn the characteristics of customer groups. Findings from the study will help inform the team on formulating  marketing and sales strategies for the brand. ```
+
+##d) Recording the experimental design
+
+```The process will entail:```
+
+* Problem Definition
+
+* Data Sourcing
+
+* Check the Data
+
+* Perform Data Cleaning
+
+* Perform Exploratory Data Analysis  (Univariate, Bivariate & Multivariate)
+
+* Implement the Solution
+
+* Challenge the Solution
+
+* Follow up Questions
+
+
+##e) Data relevance
+
+``` The dataset appropriate for this project will be one that contains characteristics of individuals who shop from Kira Plastinina. It's appropriateness will be measured against the metric of success. The following are the descriptions of the variables found within the dataset:```
+
+* The dataset consists of 10 numerical and 8 categorical attributes. The 'Revenue' attribute can be used as the class label.
+
+* "Administrative", "Administrative Duration", "Informational", "Informational Duration", "Product Related" and "Product Related Duration" represents the number of different types of pages visited by the visitor in that session and total time spent in each of these page categories. The values of these features are derived from the URL information of the pages visited by the user and updated in real-time when a user takes an action, e.g. moving from one page to another.
+
+* The "Bounce Rate", "Exit Rate" and "Page Value" features represent the metrics measured by "Google Analytics" for each page in the e-commerce site.
+
+* The value of the "Bounce Rate" feature for a web page refers to the percentage of visitors who enter the site from that page and then leave ("bounce") without triggering any other requests to the analytics server during that session. 
+
+* The value of the "Exit Rate" feature for a specific web page is calculated as for all pageviews to the page, the percentage that was the last in the session.
+
+* The "Page Value" feature represents the average value for a web page that a user visited before completing an e-commerce transaction. 
+
+* The "Special Day" feature indicates the closeness of the site visiting time to a specific special day (e.g. Mother’s Day, Valentine's Day) in which the sessions are more likely to be finalized with the transaction. The value of this attribute is determined by considering the dynamics of e-commerce such as the duration between the order date and delivery date. For example, for Valentine’s day, this value takes a nonzero value between February 2 and February 12, zero before and after this date unless it is close to another special day, and its maximum value of 1 on February 8. 
+
+* The dataset also includes the operating system, browser, region, traffic type, visitor type as returning or new visitor, a Boolean value indicating whether the date of the visit is weekend, and month of the year.
+
+```[Ecommerce Customers Dataset](http://bit.ly/EcommerceCustomersDataset)```
+
+#2. Reading the data 
+```{r}
+ecommerce <- read.csv('online_shoppers_intention.csv')
+
+```
+#3. Checking the data
+
+```{r}
+#Viewing the first 6 entries
+head(ecommerce)
+
+#viewing the last 6 entries
+tail(ecommerce)
+
+#viewing the structure of the dataset
+str(ecommerce)
+
+#Finding the number of columns and rows 
+dim(ecommerce)
+
+#Statistical summary of our data set
+summary(ecommerce)
+
+```
+#4. Tidying the data/ Data Cleaning
+
+## Completeness
+```{r}
+#checking for missing values
+colSums(is.na(ecommerce))
+
+```
+
+```{r}
+#Removing the missing values
+ec <- na.omit(ecommerce)
+colSums(is.na(ec))
+dim(ec)
+
+```
+## consistency
+```{r}
+#checking for duplicates
+anyDuplicated(ec)
+```
+```{r}
+#removing duplicates
+ec <- unique(ec)
+dim(ec)
+```
+```{r}
+#convert categorical columns to factors
+ec[,11:18] <- sapply(ec[,11:18], as.factor)
+head(ec)
+
+```
+
+```{r}
+#checking for outliers
+#list(colnames(ec))
+
+boxplot(ec$Administrative, main= 'Boxplot of administrative web pages', xlab='administrative', ylab='value')
+boxplot(ec$Administrative_Duration, main= 'Boxplot of administrative web pages duration', xlab='administrative duration', ylab='value')
+boxplot(ec$Informational, main= 'Boxplot of informational web pages', xlab='informational', ylab='value')
+boxplot(ec$Informational_Duration, main= 'Boxplot of informational web pages duration', xlab='informational duration', ylab='value')
+boxplot(ec$ProductRelated, main= 'Boxplot of product related web pages', xlab='product related', ylab='value')
+boxplot(ec$ProductRelated_Duration, main= 'Boxplot of product related web pages duration', xlab='product related duration', ylab='value')
+boxplot(ec$BounceRates, main= 'Boxplot of bounce rates', xlab='bounce rates', ylab='value')
+boxplot(ec$ExitRates, main= 'Boxplot of exit rates', xlab='exit rates', ylab='value')
+boxplot(ec$PageValues, main= 'Boxplot of page values', xlab='page values', ylab='value')
+boxplot(ec$SpecialDay, main= 'Boxplot of special day', xlab='special day', ylab='value')
+
+```
+```There are outliers in every column but we wunt remove them as they might give insight to the project.```
+
+#5. Univariate Exploratory Data Analysis
+
+## Measures of central tendancy
+```{r}
+#finding the mean
+mean <- colMeans(ec[sapply(ec, is.numeric)])
+mean
+
+#Finding the median
+#loading the tidyverse and robustbase(for the colMedians function) libraries
+library(robustbase)
+library(tidyverse)
+median <- ec%>%
+  select_if(is.numeric) %>%
+  as.matrix()%>%
+  colMedians()
+print(median)
+
+#Finding the mode
+mode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+
+mode(ec$Administrative)
+mode(ec$Administrative_Duration)
+mode(ec$Informational)
+mode(ec$Informational_Duration)
+mode(ec$ProductRelated)
+mode(ec$ProductRelated_Duration)
+mode(ec$BounceRates)
+mode(ec$ExitRates)
+mode(ec$PageValues)
+mode(ec$SpecialDay)
+
+```
+##Measures of dispersion
+```{r}
+#finding the minimum
+min(ec$Administrative)
+min(ec$Administrative_Duration)
+min(ec$Informational)
+min(ec$Informational_Duration)
+min(ec$ProductRelated)
+min(ec$ProductRelated_Duration)
+min(ec$BounceRates)
+min(ec$ExitRates)
+min(ec$PageValues)
+min(ec$SpecialDay)
+
+#finding the maximum
+max(ec$Administrative)
+max(ec$Administrative_Duration)
+max(ec$Informational)
+max(ec$Informational_Duration)
+max(ec$ProductRelated)
+max(ec$ProductRelated_Duration)
+max(ec$BounceRates)
+max(ec$ExitRates)
+max(ec$PageValues)
+max(ec$SpecialDay)
+
+#finding the range
+range(ec$Administrative)
+range(ec$Administrative_Duration)
+range(ec$Informational)
+range(ec$Informational_Duration)
+range(ec$ProductRelated)
+range(ec$ProductRelated_Duration)
+range(ec$BounceRates)
+range(ec$ExitRates)
+range(ec$PageValues)
+range(ec$SpecialDay)
+
+#finding the quantile
+quantile(ec$Administrative)
+quantile(ec$Administrative_Duration)
+quantile(ec$Informational)
+quantile(ec$Informational_Duration)
+quantile(ec$ProductRelated)
+quantile(ec$ProductRelated_Duration)
+quantile(ec$BounceRates)
+quantile(ec$ExitRates)
+quantile(ec$PageValues)
+quantile(ec$SpecialDay)
+
+#finding the standard deviation
+sd(ec$Administrative)
+sd(ec$Administrative_Duration)
+sd(ec$Informational)
+sd(ec$Informational_Duration)
+sd(ec$ProductRelated)
+sd(ec$ProductRelated_Duration)
+sd(ec$BounceRates)
+sd(ec$ExitRates)
+sd(ec$PageValues)
+sd(ec$SpecialDay)
+
+#finding variance
+var(ec$Administrative)
+var(ec$Administrative_Duration)
+var(ec$Informational)
+var(ec$Informational_Duration)
+var(ec$ProductRelated)
+var(ec$ProductRelated_Duration)
+var(ec$BounceRates)
+var(ec$ExitRates)
+var(ec$PageValues)
+var(ec$SpecialDay)
+
+#finding kurtosis
+library(e1071)
+skewness(ec$Administrative)
+skewness(ec$Administrative_Duration)
+skewness(ec$Informational)
+skewness(ec$Informational_Duration)
+skewness(ec$ProductRelated)
+skewness(ec$ProductRelated_Duration)
+skewness(ec$BounceRates)
+skewness(ec$ExitRates)
+skewness(ec$PageValues)
+skewness(ec$SpecialDay)
+
+#finding skewness
+kurtosis(ec$Administrative)
+kurtosis(ec$Administrative_Duration)
+kurtosis(ec$Informational)
+kurtosis(ec$Informational_Duration)
+kurtosis(ec$ProductRelated)
+kurtosis(ec$ProductRelated_Duration)
+kurtosis(ec$BounceRates)
+kurtosis(ec$ExitRates)
+kurtosis(ec$PageValues)
+kurtosis(ec$SpecialDay)
+
+```
+## Univariate Analysis Graphicals
+
+### Categorical columns
+```{r}
+#colnames(ec)
+#frequency table of month
+month.freq <- table(ec$Month)
+sort(month.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of months 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(month.freq), main="A barchart of months.",
+        xlab="months",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#frequency table of Operating systems
+os.freq <- table(ec$OperatingSystems)
+sort(os.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of operating systems
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(os.freq), main="A barchart of operating systems.",
+        xlab="operating systems",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#frequency table of browser
+browser.freq <- table(ec$Browser)
+sort(browser.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of browsers 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(browser.freq), main="A barchart of browser.",
+        xlab="browser",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#frequency table of region
+region.freq <- table(ec$Region)
+sort(region.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of regions 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(region.freq), main="A barchart of regions.",
+        xlab="region",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#frequency table of traffic type
+traffic.freq <- table(ec$TrafficType)
+sort(traffic.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of traffic type 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(traffic.freq), main="A barchart of traffic type.",
+        xlab="traffic type",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#frequency table of visitor type
+visitor.freq <- table(ec$VisitorType)
+sort(visitor.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of visitor type 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(visitor.freq), main="A barchart of visitor types.",
+        xlab="visitor types",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#frequency table of weekend
+weekend.freq <- table(ec$Weekend)
+sort(weekend.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of weekend 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(weekend.freq), main="A barchart of weekend.",
+        xlab="weekend",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue", "green"))
+
+#frequency table of revenue
+rev.freq <- table(ec$Revenue)
+sort(rev.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of revenue 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(rev.freq), main="A barchart of revenue.",
+        xlab="revenue",
+        ylab="frequency",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue", "green"))
+
+```
+### Numerical variables
+```{r}
+#colnames(ec)
+#creating a histogram of administrative variable.
+hist(ec$Administrative)
+
+#creating a histogram of administrative duration variable
+hist(ec$Administrative_Duration)
+
+#creating a histogram of informational variable
+hist(ec$Informational)
+
+#creating a histogram of informational duration variable
+hist(ec$Informational_Duration)
+
+#creating a histogram of product related variable
+hist(ec$ProductRelated)
+
+#creating a histogram of product related duration variable
+hist(ec$ProductRelated_Duration)
+
+#creating a histogram of bounce rates variable
+hist(ec$BounceRates)
+
+#creating a histogram of exit rates variable
+hist(ec$ExitRates)
+
+#creating a histogram of page values variable
+hist(ec$PageValues)
+
+#creating a histogram of special day variable
+hist(ec$SpecialDay)
+
+```
+### Observations from univariate analysis
+
+* May has the most web page visits.
+
+* Type 2 operating systenm is the most used.
+
+* Browser type 2 is the most used.
+
+* The highest number of individuals in the dataset came from region 1
+
+* Traffic type 2 got most entries.
+
+* Returning visitors formed the larger portion of the data.
+
+* More web page visits were made during the weekday.
+
+* There was lesser revenue.
+
+
+#6. Bivariate & Multivariate Analysis
+```{r}
+#finding the covariance
+cov <- cov(ec[,unlist(lapply(ec, is.numeric))])
+cov
+
+#Finding correlation
+cor <- cor(ec[, unlist(lapply(ec, is.numeric))])
+cor
+```
+
+```{r}
+#selecting the true values from the revenue column
+revenue <- ec[ec$Revenue == 'TRUE',]
+head(revenue)
+dim(revenue)
+
+```
+
+```{r}
+#comparison between month and revenue brought in
+#colnames(ec)
+#frequency table of month
+month1.freq <- table(revenue$Month)
+sort(month1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of months 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(month1.freq), main="A barchart of months.",
+        xlab="months",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#comparison between operating systems and revenue brought in
+#frequency table of Operating systems
+os1.freq <- table(revenue$OperatingSystems)
+sort(os1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of operating systems
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(os1.freq), main="A barchart of operating systems.",
+        xlab="operating systems",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#comparison between browser and revenue brought in
+#frequency table of browser
+browser1.freq <- table(revenue$Browser)
+sort(browser1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of browsers 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(browser1.freq), main="A barchart of browser.",
+        xlab="browser",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#comparison between region and revenue brought in
+#frequency table of region
+region1.freq <- table(revenue$Region)
+sort(region1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of regions 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(region1.freq), main="A barchart of regions.",
+        xlab="region",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#comparison between traffic type and revenue brought in
+#frequency table of traffic type
+traffic1.freq <- table(revenue$TrafficType)
+sort(traffic1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of traffic type 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(traffic1.freq), main="A barchart of traffic type.",
+        xlab="traffic type",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+#comparison between visitor type and revenue brought in
+#frequency table of visitor type
+visitor1.freq <- table(revenue$VisitorType)
+sort(visitor1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of visitor type 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(visitor1.freq), main="A barchart of visitor types.",
+        xlab="visitor types",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("green"))
+
+#comparison between weekend and revenue brought in
+#frequency table of weekend
+weekend1.freq <- table(revenue$Weekend)
+sort(weekend1.freq, decreasing = TRUE)[1:5]
+#Bar chart to show frequency distribution of weekend 
+options(repr.plot.width = 10, repr.plot.height = 10)
+barplot(c(weekend1.freq), main="A barchart of weekend.",
+        xlab="weekend",
+        ylab="revenue",
+        cex.main=2, cex.lab=1.7,cex.sub=1.2,
+        col=c("blue"))
+
+
+```
+
+```{r}
+
+#Pair plots
+pairs(ec[, 1:10])
+
+#Plotting a heat map using the correlation matrix
+heatmap(x=cor, symm=TRUE)
+
+#Plotting a correlogram
+library('corrplot')
+corrplot(cor, type='upper', order='hclust', tl.color='black', tl.srt=45)
+
+
+```
+
+### Observations from Bivariate and multivariate analysis
+
+* Most revenue was made in the month of May. This would be because it also had the most web page visits.
+
+* Operating system type 2 brought in more revenue.
+
+* Users of browser type 2 also brought in more revenue.
+
+* A great portion of revenue was gotten from region 1
+
+* The traffic type that brought in most revenue was type 2
+
+* Returning visitors also brought in more revenue as compared to the new and other visitors.
+
+* A larger amount of revenue was made during the weekdays.
+
+* Bounce rates and exit rates are highly correlated
+
+* The number of product related websites visited is highly correlated to the product related duration spent.
+
+
+#7. Implementing the Solution
+
+## Feature engineering
+```{r}
+#removing the revenue column
+
+ec.new <- ec[,1:17]
+head(ec.new)
+ec.rev <- ec$Revenue
+
+ec.new[,12:15] <- sapply(ec.new[,12:15], as.character)
+ec.new[,12:15] <- sapply(ec.new[,12:15], as.numeric)
+head(ec.new)
+
+```
+
+```{r}
+#one hot encoding factor columns
+library(caret)
+dmy = dummyVars(" ~ .", data = ec.new)
+
+ec.encod = data.frame(predict(dmy, newdata = ec.new))
+str(ec.encod)
+dim(ec.encod)
+```
+
+```{r}
+#normalizing data
+normalize <- function(x){
+  return ((x-min(x)) / (max(x)-min(x)))
+}
+normalize(ec.encod)
+
+```
+
+```{r}
+# Applying the K-means clustering algorithm with no. of centroids(k)=3
+# ---
+# 
+result<- kmeans(ec.encod,10) 
+
+# Previewing the no. of records in each cluster
+# 
+result$size
+result$cluster
+result$centers
+
+```
+```{r}
+# Verifying the results of clustering
+# ---
+# 
+par(mfrow = c(2,2), mar = c(5,4,2,2))
+
+# Plotting to see how various variable data points have been distributed in clusters
+plot(ec.encod[c(1,2,3,4,5)], col = result$cluster)
+
+
+```
+
+## Hierachical clustering
+```{r}
+# First we use the dist() function to compute the Euclidean distance between observations, 
+# d will be the first argument in the hclust() function dissimilarity matrix
+# ---
+#
+d <- dist(ec.encod, method = "euclidean")
+
+# We then hierarchical clustering using the Ward's method
+# ---
+# 
+res.hc <- hclust(d, method = "ward.D2" )
+res.hc
+
+```
+
+```{r}
+# plotting the obtained dendrogram
+# ---
+# 
+plot(res.hc, cex = 0.6, hang = -1)
+
+```
+#8. Challenging the solution
+
+```{r}
+#we'll use dbscan
+library('dbscan')
+
+# Applying our DBSCAN algorithm
+# We want minimum 4 points with in a distance of eps(0.4)
+# 
+db<-dbscan(ec.encod,eps=0.4,MinPts = 4)
+db
+
+```
+
+```{r}
+# plotting our clusters as shown
+# 
+hullplot(ec.encod,db$cluster)
+```
+
+
+### Conclusion
+
+* Kmeans performed better than hierachical clustering in this study as it can handle larger datasets as compared to hierachical clustering.
+
+* DBSCAN performsed poorly compared to Kmeans clustering.
+
+
+### Recommendations
+
+* I'd recommend more resources to be allocated to marketing the brand on the weekends as the revenue generated is lower that that of weekdays.
+
+* As seen from the study weekdays, region 1, returning visitors generate the most revenue. The company should consider looking into exploring  these features further to maximize the income brought in.
+
+* I'd recommed the use of Kmeans clustering as it can handle large datasets better that hierachial clustering.
+
+##9. Follow up questions
+
+###a) Did we have the right data?
+``` Yes we did. Our data set had a good number of variables that helped us study the individuals and determine who was likely to finish an ecommerce transaction.```
+
+###b) Do we need other data to answer our question?
+``` Not necessarily, however further research is needed to help gain deeper insight on the study.```
+
+###c) Did we have the right question?
+```Classifying customers by studying and understanding their behavior from data collected over the past year while also learning the characteristics of customer groups. We were able to do that by analysing the given dataset.```
